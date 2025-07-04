@@ -1,113 +1,64 @@
+import { useForm } from "react-hook-form";
 import * as yup from "yup";
-import "./App.css";
-import { useState } from "react";
-import { useRef } from "react";
-
-const initialState = {
-  email: "",
-  password: "",
-  confirmPassword: "",
-};
-
-const useStore = () => {
-  const [state, setState] = useState(initialState);
-
-  return {
-    getState: () => state,
-    updateState: (fieldName, newValue) => {
-      setState({ ...state, [fieldName]: newValue });
-    },
-    resetState() {
-      setState(initialState);
-    },
-  };
-};
+import { yupResolver } from "@hookform/resolvers/yup";
+import styles from "./App.module.css";
 
 const sendFormData = (formData) => {
   console.log(formData);
 };
 
+const fieldsSchema = yup.object().shape({
+  email: yup
+    .string()
+    .matches(
+      /^[\w_.@]*$/,
+      "Неверный email. Допустимые символы: буквы, цифры,@, и нижнее подчёркивание"
+    ),
+  password: yup
+    .string()
+    .matches(
+      /^[\w_]*$/,
+      "Неверный пароль. Допустимые символы: буквы, цифры и нижнее подчёркивание"
+    )
+    .min(3, "Пароль меньше 3 символов"),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref("password")], "Пароли не совпадают"),
+});
+
 export const App = () => {
-  const [loginError, setLoginError] = useState(null);
-  const { getState, updateState } = useStore();
-  const { email, password, confirmPassword } = getState();
-  const submitButtonRef = useRef(null);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    resolver: yupResolver(fieldsSchema),
+  });
 
-  const onChange = ({ target }) => {
-    updateState(target.name, target.value);
-
-    let newError = null;
-
-    if (target.name === "email") {
-      if (!/^[\w_.@]*$/.test(target.value)) {
-        newError =
-          "Неверный email. Допустимые символы: буквы, цифры и нижнее подчёркивание";
-      }
-    } else if (target.name === "password") {
-      if (!/^[\w_]*$/.test(target.value)) {
-        newError =
-          "Неверный пароль. Допустимые символы: буквы, цифры и нижнее подчёркивание";
-      } else if (target.value === confirmPassword && confirmPassword !== "") {
-        submitButtonRef.current.focus();
-      }
-    } else if (target.name === "confirmPassword") {
-      if (target.value === password && target.value.length > 2) {
-        submitButtonRef.current.focus();
-      }
-    }
-    setLoginError(newError);
-  };
-
-  const onPasswordBlur = ({ target }) => {
-    if (target.name === "password") {
-      if (target.value !== confirmPassword) {
-        setLoginError("Пароли не совпадают");
-      } else if (target.value.length < 3) {
-        setLoginError("Пароль меньше 3 символов");
-      }
-    } else if (target.name === "confirmPassword") {
-      if (target.value !== password) {
-        setLoginError("Пароли не совпадают");
-      } else if (target.value.length < 3) {
-        setLoginError("Пароль меньше 3 символов");
-      }
-    }
-  };
-
-  const onSubmit = (event) => {
-    event.preventDefault();
-    sendFormData(getState());
-  };
+  const loginError = Object.keys(errors).reduce(
+    (acc, key) => acc + errors[key]?.message,
+    ""
+  );
 
   return (
-    <div className="App">
-      {loginError && <div className="error">{loginError}</div>}
-      <form onSubmit={onSubmit}>
-        <input
-          name="email"
-          type="email"
-          placeholder="Почта"
-          value={email}
-          onChange={onChange}
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Пароль"
-          value={password}
-          onBlur={onPasswordBlur}
-          onChange={onChange}
-        />
+    <div className={styles.app}>
+      <form onSubmit={handleSubmit(sendFormData)}>
+        {loginError && <div className={styles.errorLabel}>{loginError}</div>}
+        <input name="email" type="text" {...register("email")} />
+        <input name="password" type="password" {...register("password")} />
         <input
           name="confirmPassword"
           type="password"
-          placeholder="Повтор пароля"
-          value={confirmPassword}
-          onChange={onChange}
-          onBlur={onPasswordBlur}
+          {...register("confirmPassword")}
         />
-        <button ref={submitButtonRef} type="submit" disabled={!!loginError}>
-          Зарегестрироваться
+
+        <button type="submit" disabled={!!loginError}>
+          Отправить
         </button>
       </form>
     </div>
