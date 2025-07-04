@@ -1,5 +1,6 @@
 import "./App.css";
 import { useState } from "react";
+import { useRef } from "react";
 
 const initialState = {
   email: "",
@@ -29,10 +30,13 @@ export const App = () => {
   const [loginError, setLoginError] = useState(null);
   const { getState, updateState } = useStore();
   const { email, password, confirmPassword } = getState();
+  const submitButtonRef = useRef(null);
 
   const onChange = ({ target }) => {
     updateState(target.name, target.value);
+
     let newError = null;
+
     if (target.name === "email") {
       if (!/^[\w_.@]*$/.test(target.value)) {
         newError =
@@ -42,16 +46,22 @@ export const App = () => {
       if (!/^[\w_]*$/.test(target.value)) {
         newError =
           "Неверный пароль. Допустимые символы: буквы, цифры и нижнее подчёркивание";
+      } else if (target.value === confirmPassword && confirmPassword !== "") {
+        submitButtonRef.current.focus();
+      }
+    } else if (target.name === "confirmPassword") {
+      if (target.value === password) {
+        submitButtonRef.current.focus();
       }
     }
     setLoginError(newError);
   };
 
-  const onConfirmPasswordBlur = ({ target }) => {
-    if (target.name === "confirmPassword") {
-      if (getState().password !== target.value) {
-        setLoginError("Неправильный повтор пароля");
-      }
+  const onPasswordBlur = () => {
+    if (password.length < 3) {
+      setLoginError("Пароль меньше 3 символов");
+    } else if (password !== confirmPassword) {
+      setLoginError("Пароли не совпадают");
     }
   };
 
@@ -76,6 +86,7 @@ export const App = () => {
           type="password"
           placeholder="Пароль"
           value={password}
+          onBlur={onPasswordBlur}
           onChange={onChange}
         />
         <input
@@ -84,9 +95,9 @@ export const App = () => {
           placeholder="Повтор пароля"
           value={confirmPassword}
           onChange={onChange}
-          onBlur={onConfirmPasswordBlur}
+          onBlur={onPasswordBlur}
         />
-        <button type="submit" disabled={!!loginError}>
+        <button ref={submitButtonRef} type="submit" disabled={!!loginError}>
           Зарегестрироваться
         </button>
       </form>
