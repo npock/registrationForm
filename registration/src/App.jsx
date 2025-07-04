@@ -1,3 +1,4 @@
+import * as yup from "yup";
 import "./App.css";
 import { useState } from "react";
 import { useRef } from "react";
@@ -50,18 +51,26 @@ export const App = () => {
         submitButtonRef.current.focus();
       }
     } else if (target.name === "confirmPassword") {
-      if (target.value === password) {
+      if (target.value === password && target.value.length > 2) {
         submitButtonRef.current.focus();
       }
     }
     setLoginError(newError);
   };
 
-  const onPasswordBlur = () => {
-    if (password.length < 3) {
-      setLoginError("Пароль меньше 3 символов");
-    } else if (password !== confirmPassword) {
-      setLoginError("Пароли не совпадают");
+  const onPasswordBlur = ({ target }) => {
+    if (target.name === "password") {
+      if (target.value !== confirmPassword) {
+        setLoginError("Пароли не совпадают");
+      } else if (target.value.length < 3) {
+        setLoginError("Пароль меньше 3 символов");
+      }
+    } else if (target.name === "confirmPassword") {
+      if (target.value !== password) {
+        setLoginError("Пароли не совпадают");
+      } else if (target.value.length < 3) {
+        setLoginError("Пароль меньше 3 символов");
+      }
     }
   };
 
