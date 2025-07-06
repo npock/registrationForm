@@ -1,4 +1,3 @@
-import * as yup from "yup";
 import "./App.css";
 import { useState } from "react";
 import { useRef } from "react";
@@ -28,14 +27,13 @@ const sendFormData = (formData) => {
 };
 
 export const App = () => {
-  const [loginError, setLoginError] = useState(null);
+  const [Error, setError] = useState(null);
   const { getState, updateState } = useStore();
   const { email, password, confirmPassword } = getState();
   const submitButtonRef = useRef(null);
 
   const onChange = ({ target }) => {
     updateState(target.name, target.value);
-
     let newError = null;
 
     if (target.name === "email") {
@@ -43,34 +41,26 @@ export const App = () => {
         newError =
           "Неверный email. Допустимые символы: буквы, цифры и нижнее подчёркивание";
       }
-    } else if (target.name === "password") {
+    } else {
       if (!/^[\w_]*$/.test(target.value)) {
         newError =
           "Неверный пароль. Допустимые символы: буквы, цифры и нижнее подчёркивание";
-      } else if (target.value === confirmPassword && confirmPassword !== "") {
-        submitButtonRef.current.focus();
-      }
-    } else if (target.name === "confirmPassword") {
-      if (target.value === password && target.value.length > 2) {
+      } else if (
+        target.value === password &&
+        confirmPassword !== "" &&
+        target.value.length > 2
+      ) {
         submitButtonRef.current.focus();
       }
     }
-    setLoginError(newError);
+    setError(newError);
   };
 
   const onPasswordBlur = ({ target }) => {
-    if (target.name === "password") {
-      if (target.value !== confirmPassword) {
-        setLoginError("Пароли не совпадают");
-      } else if (target.value.length < 3) {
-        setLoginError("Пароль меньше 3 символов");
-      }
-    } else if (target.name === "confirmPassword") {
-      if (target.value !== password) {
-        setLoginError("Пароли не совпадают");
-      } else if (target.value.length < 3) {
-        setLoginError("Пароль меньше 3 символов");
-      }
+    if (target.value !== confirmPassword || target.value !== password) {
+      setError("Пароли не совпадают");
+    } else if (target.value.length < 3) {
+      setError("Пароль меньше 3 символов");
     }
   };
 
@@ -79,34 +69,47 @@ export const App = () => {
     sendFormData(getState());
   };
 
+  const inputsState = {
+    email: {
+      name: "email",
+      type: "text",
+      placeholder: "Почта",
+      value: email,
+    },
+    password: {
+      name: "password",
+      type: "password",
+      placeholder: "Повтор пароля",
+      value: password,
+      onBlur: onPasswordBlur,
+    },
+    confirmPassword: {
+      name: "confirmPassword",
+      type: "password",
+      placeholder: "Повтор пароля",
+      value: confirmPassword,
+      onBlur: onPasswordBlur,
+    },
+  };
+
   return (
     <div className="App">
-      {loginError && <div className="error">{loginError}</div>}
+      {Error && <div className="error">{Error}</div>}
       <form onSubmit={onSubmit}>
-        <input
-          name="email"
-          type="email"
-          placeholder="Почта"
-          value={email}
-          onChange={onChange}
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Пароль"
-          value={password}
-          onBlur={onPasswordBlur}
-          onChange={onChange}
-        />
-        <input
-          name="confirmPassword"
-          type="password"
-          placeholder="Повтор пароля"
-          value={confirmPassword}
-          onChange={onChange}
-          onBlur={onPasswordBlur}
-        />
-        <button ref={submitButtonRef} type="submit" disabled={!!loginError}>
+        {Object.keys(inputsState).map((key, index) => {
+          return (
+            <input
+              key={index}
+              name={inputsState[key].name}
+              type={inputsState[key].type}
+              placeholder={inputsState[key].placeholder}
+              value={inputsState[key].value}
+              onBlur={inputsState[key]?.onBlur}
+              onChange={(target, inputsState) => onChange(target, inputsState)}
+            />
+          );
+        })}
+        <button ref={submitButtonRef} type="submit" disabled={!!Error}>
           Зарегестрироваться
         </button>
       </form>
